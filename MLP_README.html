@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MLP Regressor — Smartphone Battery Health</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d47;
+    --accent: #a78bfa;
+    --accent2: #34d399;
+    --accent3: #f59e0b;
+    --green: #10b981;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1017;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; line-height: 1.7; }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 80px 40px 64px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% -5%, rgba(167,139,250,0.14) 0%, transparent 70%),
+      radial-gradient(ellipse 45% 35% at 85% 85%, rgba(52,211,153,0.09) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(167,139,250,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(167,139,250,0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.3);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 16px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 4vw, 52px); font-weight: 800;
+    letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 55%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .hero-sub { color: var(--muted); font-size: 16px; max-width: 580px; margin: 0 auto 36px; }
+  .hero-stats { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .stat-pill {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 24px; text-align: center; min-width: 110px;
+  }
+  .stat-pill .val { font-size: 26px; font-weight: 800; color: var(--accent); }
+  .stat-pill .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+  section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+  .section-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+  .section-desc { color: var(--muted); margin-bottom: 32px; font-size: 15px; }
+  h3 { font-size: 17px; font-weight: 700; margin: 32px 0 14px; color: #e2e8f0; }
+  p { color: var(--muted); margin-bottom: 14px; font-size: 15px; }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px 32px; margin: 48px 0 0; display: inline-block; min-width: 340px;
+  }
+  .toc-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 16px; }
+  .toc ol { padding-left: 18px; }
+  .toc li { margin-bottom: 9px; }
+  .toc a { color: var(--text); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  .toc a:hover { color: var(--accent); }
+
+  /* ── TECH STACK ── */
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-top: 24px; }
+  .tech-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .tech-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--tc, var(--accent)); }
+  .tech-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tech-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--surface2); }
+  .tech-name { font-weight: 700; font-size: 15px; color: #fff; }
+  .tech-role { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; line-height: 1.5; }
+  .tech-badge { display: inline-block; font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 4px; background: rgba(167,139,250,0.1); color: var(--accent); border: 1px solid rgba(167,139,250,0.2); align-self: flex-start; }
+
+  /* ── PIPELINE ── */
+  .pipeline { display: flex; align-items: stretch; overflow-x: auto; margin: 28px 0; padding-bottom: 4px; }
+  .pipe-step {
+    flex: 1; min-width: 135px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 18px 14px; text-align: center; position: relative;
+  }
+  .pipe-step:first-child { border-radius: 12px 0 0 12px; }
+  .pipe-step:last-child { border-radius: 0 12px 12px 0; }
+  .pipe-step + .pipe-step { border-left: none; }
+  .pipe-step::after { content: '→'; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 18px; z-index: 2; background: var(--bg); padding: 0 2px; }
+  .pipe-step:last-child::after { display: none; }
+  .pipe-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #0b0f1a; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+  .pipe-title { font-weight: 700; font-size: 12px; color: #fff; margin-bottom: 5px; }
+  .pipe-detail { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; line-height: 1.5; }
+
+  /* ── ARCHITECTURE SVG ── */
+  .arch-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px; margin: 24px 0; overflow-x: auto;
+  }
+
+  /* ── LAYER BOXES ── */
+  .layer-diagram { display: flex; gap: 0; align-items: center; margin: 24px 0; overflow-x: auto; }
+  .layer-box {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 16px; border: 1px solid var(--border);
+    background: var(--surface); min-width: 120px;
+    position: relative;
+  }
+  .layer-box:first-child { border-radius: 14px 0 0 14px; }
+  .layer-box:last-child { border-radius: 0 14px 14px 0; }
+  .layer-box + .layer-box { border-left: none; }
+  .layer-arrow { color: var(--accent); font-size: 20px; padding: 0 4px; align-self: center; flex-shrink: 0; }
+  .layer-icon { font-size: 24px; margin-bottom: 8px; }
+  .layer-name { font-weight: 700; font-size: 13px; color: #fff; margin-bottom: 4px; }
+  .layer-dim { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); margin-bottom: 4px; }
+  .layer-detail { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.4; }
+  .layer-neurons { display: flex; flex-direction: column; gap: 3px; margin: 8px 0; }
+  .neuron { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--accent); background: transparent; }
+  .neuron.filled { background: var(--accent); }
+
+  /* ── DROPPED COLUMNS ── */
+  .drop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 24px 0; }
+  .drop-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; }
+  .drop-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .drop-col { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--red); font-weight: 600; margin-bottom: 4px; }
+  .drop-reason { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .keep-card { border-color: rgba(52,211,153,0.2); }
+  .keep-card .drop-col { color: var(--accent2); }
+
+  /* ── CORR BAR CHART ── */
+  .bar-chart { margin: 24px 0; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); width: 220px; flex-shrink: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 22px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600; white-space: nowrap; }
+  .bar-neg { background: linear-gradient(90deg, #f87171, #fb923c); color: #1a0a0a; justify-content: flex-end; margin-left: auto; }
+  .bar-pos { background: linear-gradient(90deg, #34d399, #60a5fa); color: #0a1a12; }
+  .bar-dropped-row { opacity: 0.3; }
+
+  /* ── METRICS ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 24px 0; }
+  .metric-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px; text-align: center; position: relative; overflow: hidden;
+  }
+  .metric-card.highlight { border-color: var(--accent); }
+  .metric-card.highlight::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.08), transparent 60%); pointer-events: none; }
+  .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+  .metric-val { font-size: 36px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .metric-unit { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .metric-sub { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  /* ── COMPARE TABLE ── */
+  .compare-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+  .compare-table th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .compare-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+  .compare-table tr.winner td { background: rgba(167,139,250,0.06); color: var(--accent); font-weight: 700; }
+  .compare-table tr:hover td { background: var(--surface2); }
+  .tag-win { background: rgba(52,211,153,0.15); color: var(--accent2); border: 1px solid rgba(52,211,153,0.3); font-size: 9px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-family: 'JetBrains Mono', monospace; vertical-align: middle; }
+  .tag-base { background: rgba(100,116,139,0.15); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); font-size: 9px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; font-family: 'JetBrains Mono', monospace; vertical-align: middle; }
+
+  /* ── HYPERPARAM CARDS ── */
+  .param-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin: 24px 0; }
+  .param-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 16px; }
+  .param-name { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .param-val { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.2; }
+  .param-desc { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+  /* ── CODE ── */
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; color: #94a3b8; margin: 16px 0; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .str { color: #34d399; } .cm { color: #475569; } .num { color: #f59e0b; } .cls { color: #f472b6; }
+
+  /* ── NOTE / WARNING ── */
+  .note { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-left: 3px solid var(--accent3); border-radius: 8px; padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #d4a853; line-height: 1.6; }
+  .note strong { color: var(--accent3); }
+  .info { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #c4b5fd; line-height: 1.6; }
+
+  /* ── TRAINING CURVE SVG ── */
+  .curve-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; margin: 24px 0; }
+
+  /* ── EARLY STOPPING VIZ ── */
+  .es-steps { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+  .es-row { display: flex; align-items: center; gap: 14px; }
+  .es-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .es-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+  .es-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── EVAL PLOTS DESCRIPTION ── */
+  .plot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 24px 0; }
+  .plot-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .plot-title { font-weight: 700; font-size: 13px; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .plot-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* ── FEATURE TABLE ── */
+  .feat-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+  .feat-table th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .feat-table td { padding: 11px 14px; border-bottom: 1px solid rgba(30,45,71,0.5); color: var(--text); font-size: 12px; vertical-align: top; }
+  .feat-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--blue); }
+  .feat-table tr:hover td { background: var(--surface2); }
+  .feat-table .dropped-row td { opacity: 0.4; text-decoration: line-through; }
+  .feat-table .dropped-row td:first-child { color: var(--red); text-decoration: none; }
+  .badge-drop { display: inline-block; font-size: 9px; font-family: 'JetBrains Mono', monospace; padding: 1px 6px; border-radius: 3px; background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.25); margin-left: 6px; }
+  .badge-use { display: inline-block; font-size: 9px; font-family: 'JetBrains Mono', monospace; padding: 1px 6px; border-radius: 3px; background: rgba(52,211,153,0.12); color: var(--accent2); border: 1px solid rgba(52,211,153,0.25); margin-left: 6px; }
+
+  /* ── MULTICOLLINEAR PAIR ── */
+  .mcoll-pair {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 10px;
+  }
+  .mcoll-feat { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--red); font-weight: 600; }
+  .mcoll-arrow { color: var(--muted); font-size: 14px; }
+  .mcoll-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent3); font-weight: 700; margin-left: auto; }
+  .mcoll-action { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  footer { text-align: center; padding: 56px 32px; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <div class="grid-bg"></div>
+  <div style="position:relative;z-index:1;">
+    <div class="hero-badge">Deep Learning · Regression · sklearn MLP</div>
+    <h1>Smartphone Battery Health<br/>Prediction — MLP Network</h1>
+    <p class="hero-sub">
+      A Multi-Layer Perceptron Regressor with early stopping predicting
+      <code style="background:rgba(167,139,250,0.12);padding:2px 7px;border-radius:4px;color:var(--accent);font-family:'JetBrains Mono',monospace;">current_battery_health_percent</code>
+      from 12 device usage features.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-pill"><div class="val">0.9620</div><div class="lbl">R² Score</div></div>
+      <div class="stat-pill"><div class="val">5,000</div><div class="lbl">Samples</div></div>
+      <div class="stat-pill"><div class="val">32→16</div><div class="lbl">Hidden Layers</div></div>
+      <div class="stat-pill"><div class="val">12</div><div class="lbl">Features</div></div>
+      <div class="stat-pill"><div class="val">3.45%</div><div class="lbl">RMSE</div></div>
+      <div class="stat-pill"><div class="val">325</div><div class="lbl">Epochs</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <ol>
+      <li><a href="#techstack">Tech Stack</a></li>
+      <li><a href="#pipeline">ML Pipeline Overview</a></li>
+      <li><a href="#dataset">Dataset Description</a></li>
+      <li><a href="#preprocessing">Preprocessing & Feature Dropping</a></li>
+      <li><a href="#correlation">Correlation Analysis</a></li>
+      <li><a href="#architecture">MLP Architecture</a></li>
+      <li><a href="#earlystop">Early Stopping</a></li>
+      <li><a href="#hyperparams">Hyperparameters</a></li>
+      <li><a href="#results">Results & Comparison</a></li>
+      <li><a href="#evalplots">Evaluation Plots</a></li>
+      <li><a href="#howtorun">How to Run</a></li>
+    </ol>
+  </div>
+
+<!-- ══ TECH STACK ══ -->
+<section id="techstack">
+  <div class="section-tag">01 — Tech Stack</div>
+  <h2>Technologies Used</h2>
+  <p class="section-desc">No external deep learning framework — the MLP is implemented entirely via scikit-learn's <code style="color:var(--accent);font-family:'JetBrains Mono',monospace;">MLPRegressor</code>, backed by NumPy and Pandas.</p>
+  <div class="tech-grid">
+    <div class="tech-card" style="--tc:#fbbf24;">
+      <div class="tech-icon">🐍</div>
+      <div class="tech-name">Python 3</div>
+      <div class="tech-role">Core runtime language</div>
+      <div class="tech-badge">runtime</div>
+    </div>
+    <div class="tech-card" style="--tc:#4dabf5;">
+      <div class="tech-icon">🔢</div>
+      <div class="tech-name">NumPy</div>
+      <div class="tech-role">Matrix ops · loss smoothing · residual computation</div>
+      <div class="tech-badge">math</div>
+    </div>
+    <div class="tech-card" style="--tc:#e45c3a;">
+      <div class="tech-icon">🐼</div>
+      <div class="tech-name">Pandas</div>
+      <div class="tech-role">CSV loading · encoding · column inspection</div>
+      <div class="tech-badge">data I/O</div>
+    </div>
+    <div class="tech-card" style="--tc:#a78bfa;">
+      <div class="tech-icon">🧠</div>
+      <div class="tech-name">scikit-learn</div>
+      <div class="tech-role">MLPRegressor · StandardScaler · train_test_split · metrics</div>
+      <div class="tech-badge">ML engine</div>
+    </div>
+    <div class="tech-card" style="--tc:#34d399;">
+      <div class="tech-icon">📊</div>
+      <div class="tech-name">Matplotlib</div>
+      <div class="tech-role">Loss curve · scatter plots · residual histograms</div>
+      <div class="tech-badge">plotting</div>
+    </div>
+    <div class="tech-card" style="--tc:#f472b6;">
+      <div class="tech-icon">🌊</div>
+      <div class="tech-name">Seaborn</div>
+      <div class="tech-role">Correlation matrix heatmap</div>
+      <div class="tech-badge">plotting</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PIPELINE ══ -->
+<section id="pipeline">
+  <div class="section-tag">02 — Pipeline</div>
+  <h2>ML Pipeline Overview</h2>
+  <p class="section-desc">End-to-end flow from raw CSV files to final evaluated model.</p>
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-num">1</div>
+      <div class="pipe-title">Load Data</div>
+      <div class="pipe-detail">Read 2 CSVs<br/>5000 rows each</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">2</div>
+      <div class="pipe-title">EDA</div>
+      <div class="pipe-detail">shape · dtypes<br/>null check</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">3</div>
+      <div class="pipe-title">Encode</div>
+      <div class="pipe-detail">Ordinal encode<br/>2 cat. columns</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">4</div>
+      <div class="pipe-title">Correlation</div>
+      <div class="pipe-detail">Full heatmap<br/>multicollinearity</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">5</div>
+      <div class="pipe-title">Drop Cols</div>
+      <div class="pipe-detail">Remove IDs<br/>+ corr. pairs</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">6</div>
+      <div class="pipe-title">Split</div>
+      <div class="pipe-detail">80/20 train<br/>test split</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">7</div>
+      <div class="pipe-title">Scale</div>
+      <div class="pipe-detail">StandardScaler<br/>fit on train</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">8</div>
+      <div class="pipe-title">Train MLP</div>
+      <div class="pipe-detail">Adam · ReLU<br/>early stopping</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">9</div>
+      <div class="pipe-title">Evaluate</div>
+      <div class="pipe-detail">R² · RMSE · MAE<br/>4 diagnostic plots</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ DATASET ══ -->
+<section id="dataset">
+  <div class="section-tag">03 — Dataset</div>
+  <h2>Dataset Description</h2>
+  <p class="section-desc">Two CSV files, both 5,000 rows, joined by <code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">Device_ID</code>. No missing values in either file.</p>
+
+  <h3>Features File — <code style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--blue)">smartphone_battery_features.csv</code> &nbsp;<span style="font-size:13px;color:var(--muted);font-weight:400;">(5000 × 15)</span></h3>
+  <table class="feat-table">
+    <thead><tr><th>Column</th><th>Type</th><th>Description</th><th>Range / Values</th><th>Used?</th></tr></thead>
+    <tbody>
+      <tr class="dropped-row"><td>Device_ID <span class="badge-drop">dropped</span></td><td>str</td><td>UUID identifier</td><td>unique</td><td>❌</td></tr>
+      <tr><td>device_age_months</td><td>int</td><td>Age of device in months</td><td>0 – 48</td><td>✅</td></tr>
+      <tr><td>battery_capacity_mah</td><td>int</td><td>Battery capacity (mAh)</td><td>3000 – 5000</td><td>✅</td></tr>
+      <tr><td>avg_screen_on_hours_per_day</td><td>float</td><td>Daily screen-on time</td><td>1.0 – 12.0 hrs</td><td>✅</td></tr>
+      <tr class="dropped-row"><td>avg_charging_cycles_per_week <span class="badge-drop">dropped</span></td><td>float</td><td>Weekly charge cycles</td><td>3.0 – 18.6</td><td>❌</td></tr>
+      <tr><td>avg_battery_temp_celsius</td><td>float</td><td>Avg battery temperature</td><td>21.6 – 41.2 °C</td><td>✅</td></tr>
+      <tr><td>fast_charging_usage_percent</td><td>float</td><td>% of charges using fast charge</td><td>1.1 – 99.1%</td><td>✅</td></tr>
+      <tr><td>overnight_charging_freq_per_week</td><td>int</td><td>Overnight charges per week</td><td>0 – 7</td><td>✅</td></tr>
+      <tr><td>gaming_hours_per_week</td><td>float</td><td>Weekly gaming hours</td><td>0 – 24.8 hrs</td><td>✅</td></tr>
+      <tr><td>video_streaming_hours_per_week</td><td>float</td><td>Weekly video streaming hours</td><td>0 – 27.2 hrs</td><td>✅</td></tr>
+      <tr class="dropped-row"><td>background_app_usage_level <span class="badge-drop">dropped</span></td><td>str</td><td>Background app activity level</td><td>Low / Medium / High</td><td>❌</td></tr>
+      <tr class="dropped-row"><td>signal_strength_avg <span class="badge-drop">dropped</span></td><td>str</td><td>Average signal quality</td><td>Poor / Moderate / Good</td><td>❌</td></tr>
+      <tr><td>charging_habit_score</td><td>int</td><td>Composite charging habit score</td><td>3 – 10</td><td>✅</td></tr>
+      <tr><td>usage_intensity_score</td><td>float</td><td>Composite usage intensity</td><td>6.57 – 10.0</td><td>✅</td></tr>
+      <tr class="dropped-row"><td>thermal_stress_index <span class="badge-drop">dropped</span></td><td>float</td><td>Thermal stress on battery</td><td>1.0 – 6.18</td><td>❌</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Targets File — <code style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--blue)">smartphone_battery_targets.csv</code> &nbsp;<span style="font-size:13px;color:var(--muted);font-weight:400;">(5000 × 3)</span></h3>
+  <table class="feat-table">
+    <thead><tr><th>Column</th><th>Type</th><th>Description</th><th>Used?</th></tr></thead>
+    <tbody>
+      <tr class="dropped-row"><td>Device_ID <span class="badge-drop">dropped</span></td><td>str</td><td>UUID identifier (join key)</td><td>❌</td></tr>
+      <tr><td>current_battery_health_percent <span class="badge-use">TARGET y</span></td><td>float</td><td>Current battery health — regression target</td><td>✅</td></tr>
+      <tr class="dropped-row"><td>recommended_action <span class="badge-drop">dropped</span></td><td>str</td><td>Categorical label (Replace / Monitor) — not used</td><td>❌</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══ PREPROCESSING ══ -->
+<section id="preprocessing">
+  <div class="section-tag">04 — Preprocessing</div>
+  <h2>Data Preprocessing & Feature Dropping</h2>
+  <p class="section-desc">The MLP notebook performs <strong style="color:#fff;">explicit</strong> dropping of two correlated features — unlike the RBF notebook which relied on <code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">select_dtypes</code> alone.</p>
+
+  <h3>Step 1 — Ordinal Encoding (for correlation analysis only)</h3>
+  <p>Two categorical columns were ordinal-encoded on a working copy <code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">X_df_encoded</code> before computing the correlation matrix:</p>
+  <div class="drop-grid">
+    <div class="drop-card keep-card">
+      <div class="drop-icon">🔢</div>
+      <div>
+        <div class="drop-col">background_app_usage_level</div>
+        <div class="drop-reason">Low=0 · Medium=1 · High=2 &nbsp;→&nbsp; ordinal scale</div>
+      </div>
+    </div>
+    <div class="drop-card keep-card">
+      <div class="drop-icon">📶</div>
+      <div>
+        <div class="drop-col">signal_strength_avg</div>
+        <div class="drop-reason">Poor=0 · Moderate=1 · Good=2 &nbsp;→&nbsp; ordinal scale</div>
+      </div>
+    </div>
+  </div>
+  <div class="note"><strong>Note:</strong> This encoding was only used to compute the full correlation heatmap. The final training matrix is built with <code style="font-family:'JetBrains Mono',monospace;">select_dtypes(include=[np.number])</code> on the original unencoded <code style="font-family:'JetBrains Mono',monospace;">X_df</code>, which implicitly excludes these two string columns along with <code style="font-family:'JetBrains Mono',monospace;">Device_ID</code>.</div>
+
+  <h3>Step 2 — Explicit Column Drops (unique to MLP notebook)</h3>
+  <p>After identifying multicollinear pairs, two features were <strong style="color:#fff;">explicitly dropped</strong> from the concatenated dataframe before training:</p>
+
+  <pre><span class="cm"># Explicit drop of highly correlated features</span>
+features_to_drop = [
+    <span class="str">'thermal_stress_index'</span>,           <span class="cm"># r=0.952 with avg_battery_temp_celsius</span>
+    <span class="str">'avg_charging_cycles_per_week'</span>      <span class="cm"># r=0.945 with avg_screen_on_hours_per_day</span>
+]
+
+df = df.<span class="fn">drop</span>(columns=features_to_drop)</pre>
+
+  <div class="drop-grid">
+    <div class="drop-card">
+      <div class="drop-icon">🌡️</div>
+      <div>
+        <div class="drop-col">thermal_stress_index &nbsp;→ DROPPED</div>
+        <div class="drop-reason">Correlation of <strong>0.952</strong> with <code style="font-family:'JetBrains Mono',monospace;">avg_battery_temp_celsius</code>. Near-perfect redundancy — retaining both would add noise without information gain.</div>
+      </div>
+    </div>
+    <div class="drop-card">
+      <div class="drop-icon">⚡</div>
+      <div>
+        <div class="drop-col">avg_charging_cycles_per_week &nbsp;→ DROPPED</div>
+        <div class="drop-reason">Correlation of <strong>0.945</strong> with <code style="font-family:'JetBrains Mono',monospace;">avg_screen_on_hours_per_day</code>. Charging frequency is largely a function of screen time — multicollinear, hence removed.</div>
+      </div>
+    </div>
+    <div class="drop-card">
+      <div class="drop-icon">🔑</div>
+      <div>
+        <div class="drop-col">Device_ID &nbsp;→ DROPPED (both CSVs)</div>
+        <div class="drop-reason">UUID identifier — carries zero predictive signal. Excluded before all analysis.</div>
+      </div>
+    </div>
+    <div class="drop-card">
+      <div class="drop-icon">🏷️</div>
+      <div>
+        <div class="drop-col">recommended_action &nbsp;→ DROPPED</div>
+        <div class="drop-reason">Categorical label for a classification task — not used in this regression model.</div>
+      </div>
+    </div>
+    <div class="drop-card">
+      <div class="drop-icon">🔡</div>
+      <div>
+        <div class="drop-col">background_app_usage_level &nbsp;→ DROPPED (implicit)</div>
+        <div class="drop-reason">Still a string in the original <code style="font-family:'JetBrains Mono',monospace;">X_df</code> — excluded by <code style="font-family:'JetBrains Mono',monospace;">select_dtypes(include=[np.number])</code>.</div>
+      </div>
+    </div>
+    <div class="drop-card">
+      <div class="drop-icon">📡</div>
+      <div>
+        <div class="drop-col">signal_strength_avg &nbsp;→ DROPPED (implicit)</div>
+        <div class="drop-reason">Same as above — string dtype excluded automatically.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CORRELATION ══ -->
+<section id="correlation">
+  <div class="section-tag">05 — Correlation Analysis</div>
+  <h2>Correlation Analysis</h2>
+  <p class="section-desc">Computed on all encoded numeric features + target. Two investigations: target correlation ranking and inter-feature multicollinearity check.</p>
+
+  <h3>Feature Correlation with Target (|r| ranked)</h3>
+  <div class="bar-chart">
+    <div class="bar-row">
+      <div class="bar-label">device_age_months</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:100%;">−0.854</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">avg_charging_cycles_per_week</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:48%;">−0.410</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">avg_screen_on_hours_per_day</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:47%;">−0.400</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">avg_battery_temp_celsius</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:35%;">−0.301</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">thermal_stress_index</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:33%;">−0.280</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">charging_habit_score</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:16%;">+0.138</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">overnight_charging_freq_per_week</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:8%;">−0.067</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">gaming_hours_per_week</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:6%;">−0.049</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">fast_charging_usage_percent</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:4%;">−0.033</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">video_streaming_hours_per_week</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:3%;">+0.018</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">background_app_usage_level</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:2%;">+0.015</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">usage_intensity_score</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:2%;">−0.013</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">battery_capacity_mah</div>
+      <div class="bar-track"><div class="bar-fill bar-neg" style="width:2%;">−0.011</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">signal_strength_avg</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:1%;">+0.008</div></div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);"><code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">device_age_months</code> is the dominant predictor (r = −0.854). Older devices consistently show worse battery health.</p>
+
+  <h3>Multicollinearity — Pairs Above 0.85 Threshold</h3>
+  <div class="mcoll-pair">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span class="mcoll-feat">avg_screen_on_hours_per_day</span>
+        <span class="mcoll-arrow">↔</span>
+        <span class="mcoll-feat">avg_charging_cycles_per_week</span>
+        <span class="mcoll-val">0.945</span>
+      </div>
+      <div class="mcoll-action">✂️ <code style="font-family:'JetBrains Mono',monospace;font-size:11px;">avg_charging_cycles_per_week</code> <strong style="color:#fff;">explicitly dropped</strong> — screen-on time directly drives charging frequency, making cycles redundant.</div>
+    </div>
+  </div>
+  <div class="mcoll-pair">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span class="mcoll-feat">avg_battery_temp_celsius</span>
+        <span class="mcoll-arrow">↔</span>
+        <span class="mcoll-feat">thermal_stress_index</span>
+        <span class="mcoll-val">0.952</span>
+      </div>
+      <div class="mcoll-action">✂️ <code style="font-family:'JetBrains Mono',monospace;font-size:11px;">thermal_stress_index</code> <strong style="color:#fff;">explicitly dropped</strong> — the index is largely derived from temperature, carrying near-identical information.</div>
+    </div>
+  </div>
+  <div class="note"><strong>Key difference from RBF model:</strong> The RBF notebook kept both correlated pairs and relied on Ridge regularisation to handle multicollinearity. This MLP notebook <strong>removes them explicitly</strong>, giving the network a cleaner, less redundant input space.</div>
+</section>
+
+<!-- ══ ARCHITECTURE ══ -->
+<section id="architecture">
+  <div class="section-tag">06 — Architecture</div>
+  <h2>MLP Architecture</h2>
+  <p class="section-desc">A feedforward neural network with two hidden layers, ReLU activations, and Adam optimiser implemented via <code style="font-family:'JetBrains Mono',monospace;color:var(--accent)">sklearn.neural_network.MLPRegressor</code>.</p>
+
+  <!-- Layer diagram -->
+  <div class="arch-wrap">
+    <svg width="100%" viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" style="font-family:'JetBrains Mono',monospace;max-width:960px;display:block;margin:0 auto;">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#a78bfa" opacity="0.8"/>
+        </marker>
+        <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <!-- Input Layer -->
+      <rect x="30" y="30" width="130" height="240" rx="10" fill="#1a2235" stroke="#1e2d47" stroke-width="1.5"/>
+      <text x="95" y="22" fill="#64748b" font-size="10" text-anchor="middle" letter-spacing="1">INPUT</text>
+      <!-- 12 input nodes -->
+      <circle cx="95" cy="55"  r="6" fill="#60a5fa" filter="url(#glow)"/>
+      <circle cx="95" cy="77"  r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="99"  r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="121" r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="143" r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="165" r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="187" r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="209" r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="231" r="6" fill="#60a5fa"/>
+      <circle cx="95" cy="248" r="5" fill="#60a5fa" opacity="0.4"/>
+      <text x="95" y="259" fill="#64748b" font-size="9" text-anchor="middle">···</text>
+      <text x="95" y="275" fill="#60a5fa" font-size="11" text-anchor="middle" font-weight="700">12 neurons</text>
+      <text x="95" y="289" fill="#64748b" font-size="9" text-anchor="middle">StandardScaled</text>
+
+      <!-- Arrow 1 -->
+      <line x1="162" y1="150" x2="228" y2="150" stroke="#a78bfa" stroke-width="1.5" opacity="0.6" marker-end="url(#arr)"/>
+      <text x="195" y="143" fill="#a78bfa" font-size="9" text-anchor="middle">fully</text>
+      <text x="195" y="156" fill="#a78bfa" font-size="9" text-anchor="middle">connected</text>
+
+      <!-- Hidden Layer 1 -->
+      <rect x="230" y="50" width="130" height="200" rx="10" fill="#1a2235" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="295" y="42" fill="#a78bfa" font-size="10" text-anchor="middle" letter-spacing="1">HIDDEN 1</text>
+      <circle cx="295" cy="75"  r="7" fill="#a78bfa" opacity="0.9" filter="url(#glow)"/>
+      <circle cx="295" cy="100" r="7" fill="#a78bfa" opacity="0.9"/>
+      <circle cx="295" cy="125" r="7" fill="#a78bfa" opacity="0.9"/>
+      <circle cx="295" cy="150" r="7" fill="#a78bfa" opacity="0.9"/>
+      <circle cx="295" cy="175" r="7" fill="#a78bfa" opacity="0.9"/>
+      <circle cx="295" cy="200" r="7" fill="#a78bfa" opacity="0.9"/>
+      <text x="295" y="226" fill="#64748b" font-size="9" text-anchor="middle">···</text>
+      <text x="295" y="264" fill="#a78bfa" font-size="11" text-anchor="middle" font-weight="700">32 neurons</text>
+      <text x="295" y="278" fill="#64748b" font-size="9" text-anchor="middle">ReLU activation</text>
+
+      <!-- Arrow 2 -->
+      <line x1="362" y1="150" x2="428" y2="150" stroke="#a78bfa" stroke-width="1.5" opacity="0.6" marker-end="url(#arr)"/>
+      <text x="395" y="143" fill="#a78bfa" font-size="9" text-anchor="middle">fully</text>
+      <text x="395" y="156" fill="#a78bfa" font-size="9" text-anchor="middle">connected</text>
+
+      <!-- Hidden Layer 2 -->
+      <rect x="430" y="80" width="130" height="140" rx="10" fill="#1a2235" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="495" y="72" fill="#a78bfa" font-size="10" text-anchor="middle" letter-spacing="1">HIDDEN 2</text>
+      <circle cx="495" cy="105" r="7" fill="#c084fc" opacity="0.9" filter="url(#glow)"/>
+      <circle cx="495" cy="128" r="7" fill="#c084fc" opacity="0.9"/>
+      <circle cx="495" cy="151" r="7" fill="#c084fc" opacity="0.9"/>
+      <circle cx="495" cy="174" r="7" fill="#c084fc" opacity="0.9"/>
+      <text x="495" y="198" fill="#64748b" font-size="9" text-anchor="middle">···</text>
+      <text x="495" y="236" fill="#c084fc" font-size="11" text-anchor="middle" font-weight="700">16 neurons</text>
+      <text x="495" y="250" fill="#64748b" font-size="9" text-anchor="middle">ReLU activation</text>
+
+      <!-- Arrow 3 -->
+      <line x1="562" y1="150" x2="628" y2="150" stroke="#34d399" stroke-width="1.5" opacity="0.7" marker-end="url(#arr)"/>
+      <text x="595" y="143" fill="#34d399" font-size="9" text-anchor="middle">linear</text>
+      <text x="595" y="156" fill="#34d399" font-size="9" text-anchor="middle">weights</text>
+
+      <!-- Output Layer -->
+      <rect x="630" y="120" width="130" height="60" rx="10" fill="#1a2235" stroke="#34d399" stroke-width="1.5"/>
+      <text x="695" y="112" fill="#34d399" font-size="10" text-anchor="middle" letter-spacing="1">OUTPUT</text>
+      <circle cx="695" cy="150" r="9" fill="#34d399" filter="url(#glow)"/>
+      <text x="695" y="198" fill="#34d399" font-size="11" text-anchor="middle" font-weight="700">1 neuron</text>
+      <text x="695" y="212" fill="#64748b" font-size="9" text-anchor="middle">linear (no activation)</text>
+
+      <!-- Arrow 4 -->
+      <line x1="762" y1="150" x2="828" y2="150" stroke="#34d399" stroke-width="1.5" opacity="0.6" marker-end="url(#arr)"/>
+
+      <!-- Prediction box -->
+      <rect x="830" y="120" width="110" height="60" rx="10" fill="#0d1a12" stroke="#34d399" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="885" y="145" fill="#34d399" font-size="11" text-anchor="middle" font-weight="700">ŷ</text>
+      <text x="885" y="162" fill="#64748b" font-size="9" text-anchor="middle">battery health %</text>
+
+      <!-- Param counts -->
+      <text x="295" y="296" fill="#475569" font-size="9" text-anchor="middle">12×32 + 32 = 416 params</text>
+      <text x="495" y="268" fill="#475569" font-size="9" text-anchor="middle">32×16 + 16 = 528 params</text>
+      <text x="695" y="228" fill="#475569" font-size="9" text-anchor="middle">16×1 + 1 = 17 params</text>
+    </svg>
+    <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:16px;font-family:'JetBrains Mono',monospace;">Total trainable parameters: 416 + 528 + 17 = <strong style="color:var(--accent);">961</strong></p>
+  </div>
+
+  <h3>Forward Pass</h3>
+  <pre><span class="cm"># Pseudocode — forward pass through the MLP</span>
+
+<span class="cm"># Layer 1: Input → Hidden 1</span>
+h1 = <span class="fn">relu</span>(X_scaled @ W1 + b1)   <span class="cm"># shape: (N, 32)</span>
+
+<span class="cm"># Layer 2: Hidden 1 → Hidden 2</span>
+h2 = <span class="fn">relu</span>(h1 @ W2 + b2)         <span class="cm"># shape: (N, 16)</span>
+
+<span class="cm"># Output: Hidden 2 → Prediction (linear — no activation for regression)</span>
+ŷ  = h2 @ W3 + b3               <span class="cm"># shape: (N, 1)</span></pre>
+
+  <h3>Activation Function — ReLU</h3>
+  <!-- SVG ReLU curve -->
+  <div class="curve-wrap" style="padding:20px 28px;">
+    <svg width="100%" viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="max-width:400px;display:block;margin:0 auto;font-family:'JetBrains Mono',monospace;">
+      <line x1="40" y1="130" x2="380" y2="130" stroke="#1e2d47" stroke-width="1"/>
+      <line x1="200" y1="10"  x2="200" y2="140" stroke="#1e2d47" stroke-width="1"/>
+      <!-- Axis labels -->
+      <text x="388" y="134" fill="#475569" font-size="10">x</text>
+      <text x="204" y="14"  fill="#475569" font-size="10">f(x)</text>
+      <!-- ReLU: flat for x<0, diagonal for x>0 -->
+      <polyline points="40,130 200,130 360,10" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Kink highlight -->
+      <circle cx="200" cy="130" r="4" fill="#a78bfa" filter="url(#glow2)"/>
+      <!-- Labels -->
+      <text x="100" y="120" fill="#64748b" font-size="10">f(x) = 0 &nbsp;(x ≤ 0)</text>
+      <text x="225" y="80"  fill="#a78bfa" font-size="10">f(x) = x &nbsp;(x &gt; 0)</text>
+      <text x="195" y="148" fill="#475569" font-size="9" text-anchor="middle">0</text>
+    </svg>
+    <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:8px;">ReLU — sparse, fast gradients. Avoids vanishing gradient in shallow networks.</p>
+  </div>
+
+  <h3>Loss Function & Optimiser</h3>
+  <p>Training minimises <strong style="color:#fff;">Mean Squared Error (MSE)</strong> via the <strong style="color:#fff;">Adam</strong> optimiser:</p>
+  <pre><span class="cm"># Loss</span>
+MSE = (1/N) × Σ (yᵢ − ŷᵢ)²
+
+<span class="cm"># Adam update rule (simplified)</span>
+mₜ = β₁·mₜ₋₁ + (1−β₁)·∇L    <span class="cm"># first moment (momentum)</span>
+vₜ = β₂·vₜ₋₁ + (1−β₂)·∇L²   <span class="cm"># second moment (adaptive LR)</span>
+θₜ = θₜ₋₁ − η · m̂ₜ / (√v̂ₜ + ε)
+
+<span class="cm"># sklearn defaults used</span>
+β₁=0.9, β₂=0.999, ε=1e-8, η=0.001 (initial)</pre>
+</section>
+
+<!-- ══ EARLY STOPPING ══ -->
+<section id="earlystop">
+  <div class="section-tag">07 — Training Control</div>
+  <h2>Early Stopping</h2>
+  <p class="section-desc">The model uses early stopping to prevent overfitting and find the optimal number of epochs automatically.</p>
+
+  <div class="info">
+    The model trained for <strong style="color:#fff;">325 epochs</strong> out of the maximum 500 — early stopping triggered after no improvement for 20 consecutive epochs on the held-out validation set.
+  </div>
+
+  <!-- Training loss curve SVG -->
+  <div class="curve-wrap">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;">Simulated Loss Curve Shape (actual: 2083.3 → 4.77 over 325 epochs)</p>
+    <svg width="100%" viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="max-width:700px;display:block;margin:0 auto;font-family:'JetBrains Mono',monospace;">
+      <defs>
+        <linearGradient id="lossGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid lines -->
+      <line x1="60" y1="20"  x2="660" y2="20"  stroke="#1e2d47" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="60" y1="60"  x2="660" y2="60"  stroke="#1e2d47" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="60" y1="100" x2="660" y2="100" stroke="#1e2d47" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="60" y1="140" x2="660" y2="140" stroke="#1e2d47" stroke-width="1" stroke-dasharray="4,4"/>
+      <!-- Axes -->
+      <line x1="60" y1="160" x2="660" y2="160" stroke="#475569" stroke-width="1.5"/>
+      <line x1="60" y1="10"  x2="60"  y2="165" stroke="#475569" stroke-width="1.5"/>
+      <!-- Y labels -->
+      <text x="50" y="23"  fill="#475569" font-size="9" text-anchor="end">2000</text>
+      <text x="50" y="63"  fill="#475569" font-size="9" text-anchor="end">1000</text>
+      <text x="50" y="103" fill="#475569" font-size="9" text-anchor="end">100</text>
+      <text x="50" y="143" fill="#475569" font-size="9" text-anchor="end">10</text>
+      <text x="50" y="163" fill="#475569" font-size="9" text-anchor="end">5</text>
+      <!-- X labels -->
+      <text x="60"  y="175" fill="#475569" font-size="9" text-anchor="middle">0</text>
+      <text x="185" y="175" fill="#475569" font-size="9" text-anchor="middle">50</text>
+      <text x="310" y="175" fill="#475569" font-size="9" text-anchor="middle">100</text>
+      <text x="435" y="175" fill="#475569" font-size="9" text-anchor="middle">200</text>
+      <text x="510" y="175" fill="#475569" font-size="9" text-anchor="middle">260</text>
+      <text x="570" y="175" fill="#475569" font-size="9" text-anchor="middle">305</text>
+      <text x="620" y="175" fill="#475569" font-size="9" text-anchor="middle">325</text>
+      <!-- Loss curve path (log-like decay) -->
+      <path d="M60,22 C90,22 110,30 150,55 C190,80 230,105 280,128 C330,145 380,152 430,155 C480,157 530,158 570,158.5 C600,158.8 615,159 630,159.2" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Fill under curve -->
+      <path d="M60,22 C90,22 110,30 150,55 C190,80 230,105 280,128 C330,145 380,152 430,155 C480,157 530,158 570,158.5 C600,158.8 615,159 630,159.2 L630,160 L60,160 Z" fill="url(#lossGrad)"/>
+      <!-- Early stop marker -->
+      <line x1="620" y1="15" x2="620" y2="160" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="622" y="28" fill="#f59e0b" font-size="9">early stop</text>
+      <text x="622" y="40" fill="#f59e0b" font-size="9">epoch 325</text>
+      <!-- Loss labels -->
+      <text x="75" y="18"  fill="#64748b" font-size="9">2083.3 →</text>
+      <text x="635" y="157" fill="#34d399" font-size="9">← 4.77</text>
+      <!-- Axis titles -->
+      <text x="360" y="195" fill="#64748b" font-size="10" text-anchor="middle">Epoch</text>
+      <text x="14" y="90" fill="#64748b" font-size="10" text-anchor="middle" transform="rotate(-90,14,90)">MSE Loss</text>
+    </svg>
+  </div>
+
+  <h3>Early Stopping Configuration</h3>
+  <div class="es-steps">
+    <div class="es-row">
+      <div class="es-dot" style="background:#a78bfa;"></div>
+      <div class="es-label">early_stopping=True</div>
+      <div class="es-desc">— holds out 10% of training data as a validation set</div>
+    </div>
+    <div class="es-row">
+      <div class="es-dot" style="background:#60a5fa;"></div>
+      <div class="es-label">validation_fraction=0.1</div>
+      <div class="es-desc">— 400 samples used for validation monitoring (of 4000 train)</div>
+    </div>
+    <div class="es-row">
+      <div class="es-dot" style="background:#f59e0b;"></div>
+      <div class="es-label">n_iter_no_change=20</div>
+      <div class="es-desc">— training halts after 20 consecutive epochs with no improvement</div>
+    </div>
+    <div class="es-row">
+      <div class="es-dot" style="background:#34d399;"></div>
+      <div class="es-label">max_iter=500</div>
+      <div class="es-desc">— upper bound; model stopped at epoch 325 (early stopping triggered)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HYPERPARAMS ══ -->
+<section id="hyperparams">
+  <div class="section-tag">08 — Configuration</div>
+  <h2>Hyperparameters</h2>
+  <p class="section-desc">Final model configuration — no grid search was performed; these are the hand-tuned parameters used in the notebook.</p>
+  <div class="param-grid">
+    <div class="param-card">
+      <div class="param-name">hidden_layer_sizes</div>
+      <div class="param-val">(32, 16)</div>
+      <div class="param-desc">Two hidden layers: 32 neurons then 16 neurons</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">activation</div>
+      <div class="param-val">relu</div>
+      <div class="param-desc">Rectified Linear Unit — fast, avoids vanishing gradient</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">solver</div>
+      <div class="param-val">adam</div>
+      <div class="param-desc">Adaptive moment estimation — adaptive LR per parameter</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">alpha (L2)</div>
+      <div class="param-val">0.001</div>
+      <div class="param-desc">L2 regularisation penalty on weights</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">max_iter</div>
+      <div class="param-val">500</div>
+      <div class="param-desc">Max epochs — actual: 325 (early stop)</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">val_fraction</div>
+      <div class="param-val">0.1</div>
+      <div class="param-desc">10% of training set held out for early stopping</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">n_iter_no_change</div>
+      <div class="param-val">20</div>
+      <div class="param-desc">Patience — stop after 20 epochs without improvement</div>
+    </div>
+    <div class="param-card">
+      <div class="param-name">random_state</div>
+      <div class="param-val">42</div>
+      <div class="param-desc">Seed for reproducibility</div>
+    </div>
+  </div>
+
+  <pre><span class="cm"># Final MLPRegressor definition from notebook</span>
+mlp = <span class="cls">MLPRegressor</span>(
+    hidden_layer_sizes=(<span class="num">32</span>, <span class="num">16</span>),
+    activation=<span class="str">'relu'</span>,
+    solver=<span class="str">'adam'</span>,
+    alpha=<span class="num">0.001</span>,
+    max_iter=<span class="num">500</span>,
+    random_state=<span class="num">42</span>,
+    early_stopping=<span class="kw">True</span>,
+    validation_fraction=<span class="num">0.1</span>,
+    n_iter_no_change=<span class="num">20</span>
+)</pre>
+</section>
+
+<!-- ══ RESULTS ══ -->
+<section id="results">
+  <div class="section-tag">09 — Results</div>
+  <h2>Results & Model Comparison</h2>
+  <p class="section-desc">MLP evaluated on 1,000 held-out test samples. Compared against Linear Regression baseline trained on the same data.</p>
+
+  <div class="metrics-grid">
+    <div class="metric-card highlight">
+      <div class="metric-label">R² Score</div>
+      <div class="metric-val">0.9620</div>
+      <div class="metric-sub">Explains 96.2% of variance in battery health</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">RMSE</div>
+      <div class="metric-val" style="color:var(--accent2);">3.45</div>
+      <div class="metric-unit">% battery health</div>
+      <div class="metric-sub">Root Mean Squared Error</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">MAE</div>
+      <div class="metric-val" style="color:var(--blue);">2.71</div>
+      <div class="metric-unit">% battery health</div>
+      <div class="metric-sub">Mean Absolute Error</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Epochs Trained</div>
+      <div class="metric-val" style="color:var(--accent3);">325</div>
+      <div class="metric-sub">Early stopped from max 500</div>
+    </div>
+  </div>
+
+  <h3>Comparison — Linear Regression vs MLP</h3>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>R²</th>
+        <th>RMSE (%)</th>
+        <th>MAE (%)</th>
+        <th>Training</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Linear Regression <span class="tag-base">baseline</span></td>
+        <td>0.9299</td>
+        <td>4.6847</td>
+        <td>3.6770</td>
+        <td>Single pass</td>
+      </tr>
+      <tr class="winner">
+        <td>MLP Network <span class="tag-win">best</span></td>
+        <td>0.9620</td>
+        <td>3.4514</td>
+        <td>2.7117</td>
+        <td>325 epochs (Adam)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Visual comparison bars -->
+  <h3>Metric Improvement Over Baseline</h3>
+  <div class="bar-chart">
+    <div class="bar-row">
+      <div class="bar-label">R² improvement</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:32%;">+0.032</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">RMSE reduction</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:26%;">−1.23 pts</div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">MAE reduction</div>
+      <div class="bar-track"><div class="bar-fill bar-pos" style="width:26%;">−0.97 pts</div></div>
+    </div>
+  </div>
+
+  <!-- 3-model comparison including RBF -->
+  <h3>Full 3-Model Summary (including RBF from previous notebook)</h3>
+  <table class="compare-table">
+    <thead>
+      <tr><th>Model</th><th>R²</th><th>RMSE</th><th>MAE</th><th>Key feature</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Linear Regression</td>
+        <td>0.9299</td><td>4.6847</td><td>3.6770</td>
+        <td style="color:var(--muted);font-size:11px;">Baseline, no nonlinearity</td>
+      </tr>
+      <tr>
+        <td>RBF Network</td>
+        <td>0.9419</td><td>4.2668</td><td>3.2549</td>
+        <td style="color:var(--muted);font-size:11px;">1500 K-Means centers + Ridge</td>
+      </tr>
+      <tr class="winner">
+        <td>MLP Network <span class="tag-win">best</span></td>
+        <td>0.9620</td><td>3.4514</td><td>2.7117</td>
+        <td style="color:var(--accent);font-size:11px;">32→16 ReLU + Adam + early stop</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══ EVAL PLOTS ══ -->
+<section id="evalplots">
+  <div class="section-tag">10 — Evaluation</div>
+  <h2>Evaluation Plots</h2>
+  <p class="section-desc">The notebook generates five diagnostic visualisations to assess model quality.</p>
+  <div class="plot-grid">
+    <div class="plot-card">
+      <div class="plot-title">📈 Predicted vs Actual</div>
+      <div class="plot-desc">Scatter plot of ŷ vs y on the test set. Points clustered tightly around the red diagonal (y=x) confirm low systematic error.</div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">〰️ Residual Plot</div>
+      <div class="plot-desc">Residuals (y−ŷ) vs predicted values. Should be randomly scattered around zero — patterns here indicate model bias or heteroscedasticity.</div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">📊 Residual Distribution</div>
+      <div class="plot-desc">Histogram of (y−ŷ). Should be approximately normal, centred at zero. Skew indicates systematic over/under-prediction.</div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">🟠 Absolute Error Distribution</div>
+      <div class="plot-desc">Histogram of |y−ŷ|. Mean marked with a red dashed line. Right tail shows largest prediction errors.</div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">📉 Training Loss Curve</div>
+      <div class="plot-desc">MSE loss per epoch during training (2083.3 → 4.77). Shows convergence behaviour and where early stopping triggered.</div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">〜 Smoothed Line Plot</div>
+      <div class="plot-desc">Expected vs predicted battery health as smoothed lines (25-sample moving average) over sorted test samples — shows tracking quality across the health range.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW TO RUN ══ -->
+<section id="howtorun">
+  <div class="section-tag">11 — Usage</div>
+  <h2>How to Run</h2>
+
+  <pre><span class="cm"># 1. Place both CSVs in the same directory as the notebook</span>
+<span class="cm">#    smartphone_battery_features.csv</span>
+<span class="cm">#    smartphone_battery_targets.csv</span>
+
+<span class="cm"># 2. Install dependencies</span>
+pip install pandas numpy matplotlib seaborn scikit-learn
+
+<span class="cm"># 3. Open and run the notebook top-to-bottom</span>
+jupyter notebook MLP_Model.ipynb</pre>
+
+  <div class="note"><strong>Note:</strong> The MLP trains quickly (~5–10 seconds on CPU for 325 epochs). No GPU required — scikit-learn's <code style="font-family:'JetBrains Mono',monospace;">MLPRegressor</code> runs on CPU only. Run all cells in order; the early stopping will reproduce the 325-epoch result with <code style="font-family:'JetBrains Mono',monospace;">random_state=42</code>.</div>
+
+  <h3>Expected Output</h3>
+  <pre><span class="cm"># After running all cells:</span>
+Linear Regression RMSE: <span class="num">4.6847</span>
+Linear Regression R2:   <span class="num">0.9299</span>
+
+MLP RMSE: <span class="num">3.4514</span>
+MLP MAE:  <span class="num">2.7117</span>
+MLP R2:   <span class="num">0.9620</span>
+
+<span class="cm"># Plus 6 matplotlib figures (loss curve, scatter plots, histograms)</span></pre>
+</section>
+
+</div><!-- /container -->
+
+<footer>
+  MLP Regressor · Smartphone Battery Health Prediction · Dataset: smartphone_battery_features.csv + smartphone_battery_targets.csv<br/>
+  Built with Python · NumPy · Pandas · scikit-learn · Matplotlib · Seaborn
+</footer>
+
+</body>
+</html>
