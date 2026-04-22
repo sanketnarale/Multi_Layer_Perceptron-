@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://mlp-vercel.vercel.app">
+    <img src="https://img.shields.io/badge/Live_Demo-View_Project-6366f1?style=for-the-badge&logo=vercel">
+  </a>
+</p>
+
+<p align="center">
   <img alt="R2" src="https://img.shields.io/badge/R%C2%B2-0.9620-a78bfa?style=for-the-badge">
   <img alt="Samples" src="https://img.shields.io/badge/Samples-5000-34d399?style=for-the-badge">
   <img alt="Architecture" src="https://img.shields.io/badge/Hidden_Layers-32%E2%86%9216-60a5fa?style=for-the-badge">
@@ -374,9 +380,6 @@ MLP MAE:  2.7117
 MLP R2:   0.9620
 ```
 
-### Runtime Note
-
-The HTML version notes that training typically completes in around 5 to 10 seconds on CPU for the 325-epoch run. No GPU is required because `MLPRegressor` runs on CPU.
 
 ### Dataset Path Note
 
